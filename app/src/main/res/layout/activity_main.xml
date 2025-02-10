@@ -32,6 +32,18 @@
             android:layout_height="wrap_content"
             android:text="print" />
 
+        <Button
+            android:id="@+id/bitmap"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="print_bitmap" />
+
+        <Button
+            android:id="@+id/reconnect_btn"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="reconnect " />
+
 
     </LinearLayout>
 

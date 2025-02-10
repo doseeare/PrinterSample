@@ -1,37 +1,82 @@
 package kg.optima.mobile.doc.printersample
 
+import android.annotation.SuppressLint
+import android.bluetooth.BluetoothAdapter
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
-import android.widget.TextView
-import androidx.activity.enableEdgeToEdge
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.core.view.ViewCompat
-import androidx.core.view.WindowInsetsCompat
+import java.io.File
 
 class MainActivity : AppCompatActivity() {
 	
-	private val button by lazy {
-		findViewById<Button>(R.id.button)
+	private val bluetoothAdapter: BluetoothAdapter? = BluetoothAdapter.getDefaultAdapter()
+	private val printer by lazy {
+		BluetoothPrinter(this)
 	}
 	
-	private val textView by lazy {
-		findViewById<TextView>(R.id.button)
-	}
-	
-	private val editText by lazy {
-		findViewById<EditText>(R.id.button)
-	}
-	
+	@SuppressLint("MissingInflatedId")
 	override fun onCreate(savedInstanceState: Bundle?) {
 		super.onCreate(savedInstanceState)
-		enableEdgeToEdge()
 		setContentView(R.layout.activity_main)
-		ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
-			val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-			v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
-			insets
+		
+		val button: Button = findViewById(R.id.button)
+		val reconnectBtn: Button = findViewById(R.id.reconnect_btn)
+		val editText: EditText = findViewById(R.id.edit_text)
+		val printBitmap : Button = findViewById(R.id.bitmap)
+		
+		if (bluetoothAdapter == null) {
+			Toast.makeText(this, "Bluetooth не поддерживается", Toast.LENGTH_LONG).show()
+			return
 		}
+		
+		
+		val deviceMac = printer.searchPrinter()
+		
+		if (deviceMac == null) {
+			logd("device not found")
+		} else {
+			printer.tryConnect(deviceMac)
+			
+		}
+		
+		printBitmap.setOnClickListener {
+			val file = PdfManager.getPdfFileFromRaw(this, R.raw.receipt)
+			val pdf = PdfManager.pdfToBitmap(this, file) ?: throw NullPointerException("suka net takogo")
+			if (printer.isConnect) {
+				printer.printBitmap(pdf)
+			} else {
+				toast("printer not connected")
+			}
+		}
+		
+		reconnectBtn.setOnClickListener {
+			val reconnectMac = printer.searchPrinter()
+			if (reconnectMac == null) {
+				logd("device not found")
+			} else {
+				printer.tryConnect(reconnectMac)
+				toast("trying connect")
+			}
+			
+		}
+		
+		button.setOnClickListener {
+			if (printer.isConnect) {
+				printer.printText(editText.text.toString())
+			} else {
+				toast("printer not connected")
+			}
+		}
+		
+	}
+	
+	override fun onDestroy() {
+		super.onDestroy()
+		printer.disconnect()
 	}
 	
 }
+
